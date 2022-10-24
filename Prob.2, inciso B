@@ -24,21 +24,24 @@ class ODEsolver(Sequential):
     def metrics(self):
         return [self.loss_tracker]
     
-    def train_step(self, data):
+     def train_step(self, data):
         batch_size = tf.shape(data)[0]
         x = tf.random.uniform((batch_size,1), minval=-5, maxval=5)
         
         with tf.GradientTape() as tape:
             with tf.GradientTape() as tape2:
                 tape2.watch(x)
-                y_pred = self(x, training=True)
-            d2y = tape2.gradient(y_pred, x)
-            x_o = tf.zeros((batch_size,1))
-            y_o = self(x_o,training=True)
-            eq = d2y + y_pred 
-            ic = y_o + 0.5  #segunda condición inicial
-            ic = y_o - 1.   #primera condición inicial
-            loss = keras.losses.mean_squared_error(0., eq) + keras.losses.mean_squared_error(0., ic)
+                
+                with tf.GradientTape() as tape3:
+                    tape3.watch(x)
+                    y_pred = self(x, training=True)
+                    d2y = tape2.gradient(y_pred, x)
+                    x_o = tf.zeros((batch_size,1))
+                    y_o = self(x_o,training=True)
+                    eq = d2y + y_pred 
+                    ic = y_o + 0.5
+                    loss = keras.losses.mean_squared_error(0., eq) + keras.losses.mean_squared_error(0., ic)
+                    
             
         #apply grads
         grads = tape.gradient(loss, self.trainable_variables)
